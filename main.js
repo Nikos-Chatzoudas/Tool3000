@@ -1,24 +1,32 @@
 import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.js'
+import { handleFileConversion } from './fontconverter';
 
-document.querySelector('#app').innerHTML = `
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-      <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-    </a>
-    <h1>Hello Vite!</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite logo to learn more
-    </p>
-  </div>
-`
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('ttfFile');
+  const convertButton = document.getElementById('convertButton');
+  const status = document.getElementById('status');
 
-setupCounter(document.querySelector('#counter'))
+  convertButton.addEventListener('click', async () => {
+    const file = fileInput.files[0];
+    if (!file) {
+      status.textContent = 'Please select a TTF file.';
+      return;
+    }
+
+    status.textContent = 'Converting...';
+    try {
+      const woffBlob = await handleFileConversion(file);
+      const downloadUrl = URL.createObjectURL(woffBlob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = downloadUrl;
+      downloadLink.download = file.name.replace('.ttf', '.woff');
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      status.textContent = 'Conversion complete! Download started.';
+    } catch (error) {
+      console.error('Conversion failed:', error);
+      status.textContent = 'Conversion failed. Please try again.';
+    }
+  });
+});
