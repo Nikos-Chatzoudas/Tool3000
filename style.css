@@ -6,7 +6,7 @@ body {
   font-family: "Poppins", sans-serif;
   color: rgba(255, 255, 255, 0.87);
   background-color: #121212;
-  background-image: radial-gradient(at bottom, #b59df7, #121212);
+  background-image: radial-gradient(at bottom, #715cab, #121212);
 }
 
 body::before,
