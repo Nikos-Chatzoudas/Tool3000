@@ -2,9 +2,13 @@ import './style.css';
 
 const fileInput = document.getElementById('fileInput');
 const convertButton = document.getElementById('convertButton');
+const resizeButton = document.getElementById('resizeButton');
 const status = document.getElementById('status');
 const dropArea = document.getElementById('dropArea');
 const outputFormat = document.getElementById('outputFormat');
+const widthInput = document.getElementById('widthInput');
+const heightInput = document.getElementById('heightInput');
+const preserveAspectRatio = document.getElementById('preserveAspectRatio');
 
 const supportedFormats = {
   'image': {
@@ -46,6 +50,10 @@ function setupEventListeners() {
   dropArea.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
   convertButton.addEventListener('click', handleConvertButtonClick);
+  resizeButton.addEventListener('click', handleResizeButtonClick);
+  preserveAspectRatio.addEventListener('change', handleAspectRatioChange);
+  widthInput.addEventListener('input', handleDimensionInput);
+  heightInput.addEventListener('input', handleDimensionInput);
 }
 
 function preventDefaults(e) {
@@ -85,7 +93,7 @@ function handleFiles(files) {
   }
 
   fileInput.files = files;
-  updateStatus(`${files.length} file selected.`);
+  updateStatus(`${files.length} file(s) selected.`);
   populateConversionOptions(fileType, files[0].name.split('.').pop().toLowerCase());
 }
 
@@ -150,6 +158,102 @@ async function convertFile(file, targetFormat) {
   downloadLink.click();
   document.body.removeChild(downloadLink);
   URL.revokeObjectURL(downloadUrl);
+}
+
+function handleResizeButtonClick() {
+  const files = fileInput.files;
+  const width = parseInt(widthInput.value);
+  const height = parseInt(heightInput.value);
+
+  if (files.length === 0 || (!width && !height)) {
+    updateStatus('Please select file(s) and specify at least one dimension for resizing.');
+    return;
+  }
+
+  updateStatus('Resizing...');
+  resizeFiles(files, width, height)
+    .then(() => {
+      updateStatus('Resizing complete! Downloads started.');
+    })
+    .catch(error => {
+      updateStatus(`Resizing failed: ${error.message}`);
+    });
+}
+
+async function resizeFiles(files, width, height) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  for (const file of files) {
+    await resizeFile(file, width, height, canvas, ctx);
+  }
+}
+
+async function resizeFile(file, width, height, canvas, ctx) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let newWidth, newHeight;
+
+      if (preserveAspectRatio.checked) {
+        if (width) {
+          newWidth = width;
+          newHeight = (img.height / img.width) * width;
+        } else {
+          newHeight = height;
+          newWidth = (img.width / img.height) * height;
+        }
+      } else {
+        newWidth = width || img.width;
+        newHeight = height || img.height;
+      }
+
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+      canvas.toBlob((blob) => {
+        const downloadUrl = URL.createObjectURL(blob);
+        const downloadLink = document.createElement('a');
+        downloadLink.href = downloadUrl;
+        downloadLink.download = `resized_${file.name}`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(downloadUrl);
+        resolve();
+      }, file.type);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function handleAspectRatioChange() {
+  if (preserveAspectRatio.checked) {
+    if (widthInput.value) {
+      heightInput.disabled = true;
+    } else if (heightInput.value) {
+      widthInput.disabled = true;
+    }
+  } else {
+    widthInput.disabled = false;
+    heightInput.disabled = false;
+  }
+}
+
+function handleDimensionInput(e) {
+  if (preserveAspectRatio.checked) {
+    if (e.target === widthInput) {
+      heightInput.value = '';
+      heightInput.disabled = true;
+      widthInput.disabled = false;
+    } else {
+      widthInput.value = '';
+      widthInput.disabled = true;
+      heightInput.disabled = false;
+    }
+  }
 }
 
 function updateStatus(message) {

@@ -31,18 +31,46 @@
     </div>
     <input type="file" id="fileInput" multiple style="display: none;">
 
-    <div class="menu">
-      <select id="outputFormat" style="margin: 10px;">
-        <option value="">Select option</option>
-      </select>
-      <div id="convertButton">
-        <p>CONVERT</p><i class="icon fa-solid fa-gear"></i>
+    <div style="display: flex; flex-direction: row; gap: 1rem;">
+      <div class="convertmenu menu">
+        <div class="colum">
+          <h3 class="menutitle">Converter</h3>
+          <div class="row">
+            <select id="outputFormat">
+              <option value="">Select option</option>
+            </select>
+            <div id="convertButton">
+              <p>CONVERT</p><i class="icon gear fa-solid fa-gear"></i>
+            </div>
+          </div>
+        </div>
       </div>
+      <div style="display: flex; flex-direction: row;">
+        <div class="resizemenu menu">
+          <div class="colum">
+            <h3 class="menutitle">Resizer</h3>
+            <div class="row">
+              <input type="number" id="widthInput" placeholder="Width" class="input">
+              <input type="number" id="heightInput" placeholder="Height" class="input">
+
+              <div class="row" style="gap: 0rem;">
+                <input type="checkbox" id="preserveAspectRatio" name="preserveAspectRatio" checked>
+                <label for="preserveAspectRatio">Preserve Aspect Ratio</label>
+              </div>
+              <div id="resizeButton">
+                <p>RESIZE</p><i class="resizeicon icon fa-solid fa-up-right-and-down-left-from-center"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+
     </div>
     <p id="status"></p>
-  </div>
-  <script src="https://kit.fontawesome.com/f1d4922354.js" crossorigin="anonymous"></script>
-  <script type="module" src="/main.js"></script>
+    <script src="https://kit.fontawesome.com/f1d4922354.js" crossorigin="anonymous"></script>
+    <script type="module" src="/main.js"></script>
 </body>
 
 </html>
