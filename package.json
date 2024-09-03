@@ -10,8 +10,5 @@
   },
   "devDependencies": {
     "vite": "^5.4.1"
-  },
-  "dependencies": {
-    "fonteditor-core": "^2.4.1"
   }
 }
