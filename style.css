@@ -6,7 +6,7 @@ body {
   font-family: "Poppins", sans-serif;
   color: rgba(255, 255, 255, 0.87);
   background-color: #121212;
-  background-image: radial-gradient(at bottom, #190024fd, #121212);
+  background-image: radial-gradient(at bottom, #b59df7, #121212);
 }
 
 body::before,
@@ -41,7 +41,7 @@ body::before {
   align-self: center;
   width: 60vw;
   height: 30vh;
-  border: 2px solid #383838;
+  border: 2px solid rgba(245, 245, 245, 0.452);
   background-color: rgba(56, 56, 56, 0.2);
   padding: 0px;
   cursor: pointer;
@@ -61,31 +61,10 @@ body::before {
   background-color: #f0f0f0;
 }
 
-@keyframes fontCycle {
-  0% {
-    font-family: 'Poppins', sans-serif;
-  }
 
-  25% {
-    font-family: monospace, sans-serif;
-  }
-
-  50% {
-    font-family: 'Kenia', sans-serif;
-  }
-
-  75% {
-    font-family: 'Bungee Inline', sans-serif;
-  }
-
-  100% {
-    font-family: 'Poppins', sans-serif;
-  }
-}
 
 .title {
   font-size: 4rem;
-  animation: fontCycle 5s infinite;
   height: 5rem;
 }
 
@@ -111,9 +90,6 @@ p {
   align-self: center;
 }
 
-#convertButton:hover {
-  border-color: #646cff;
-}
 
 #convertButton:hover .icon {
   animation: spin 3s infinite;
