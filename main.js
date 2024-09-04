@@ -1,8 +1,13 @@
 import './style.css';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import Tesseract from 'tesseract.js';
+
 const fileInput = document.getElementById('fileInput');
 const convertButton = document.getElementById('convertButton');
 const resizeButton = document.getElementById('resizeButton');
+const extractButton = document.getElementById('extract');
+const copyButton = document.getElementById('copy');
+const copyIcon = copyButton.querySelector('i');
 const status = document.getElementById('status');
 const dropArea = document.getElementById('dropArea');
 const outputFormat = document.getElementById('outputFormat');
@@ -33,8 +38,39 @@ const supportedFormats = {
   }
 };
 
+let extractedText = '';
+
 function init() {
   setupEventListeners();
+  setupPasteListener();
+}
+
+function setupPasteListener() {
+  document.addEventListener('paste', handlePaste);
+}
+
+function handlePaste(e) {
+  console.log('Paste event triggered');
+  e.preventDefault();
+  e.stopPropagation();
+
+  const items = e.clipboardData.items;
+  console.log('Clipboard items:', items);
+
+  for (let i = 0; i < items.length; i++) {
+    console.log(`Item ${i} type:`, items[i].type);
+    if (items[i].type.indexOf('image') !== -1) {
+      console.log('Image found in clipboard');
+      const blob = items[i].getAsFile();
+      const file = new File([blob], "pasted_image.png", { type: blob.type });
+      console.log('Created file:', file);
+      handleFiles([file]);
+      return;
+    }
+  }
+
+  console.log('No image found in clipboard');
+  updateStatus('No image found in clipboard. Please copy an image and try again.');
 }
 
 function setupEventListeners() {
@@ -60,6 +96,8 @@ function setupEventListeners() {
   preserveAspectRatio.addEventListener('change', handleAspectRatioChange);
   widthInput.addEventListener('input', handleDimensionInput);
   heightInput.addEventListener('input', handleDimensionInput);
+  extractButton.addEventListener('click', handleExtractButtonClick);
+  copyButton.addEventListener('click', handleCopyButtonClick);
 }
 
 function preventDefaults(e) {
@@ -82,6 +120,7 @@ function handleDrop(e) {
 }
 
 function handleFiles(files) {
+  console.log('handleFiles called with:', files);
   if (files.length === 0) {
     updateStatus("No files selected.");
     return;
@@ -93,24 +132,36 @@ function handleFiles(files) {
   }
 
   const fileType = getFileType(files[0]);
+  console.log('File type:', fileType);
   if (!fileType) {
     updateStatus("Unsupported file type.");
     return;
   }
 
-  fileInput.files = files;
+  // Create a new FileList-like object
+  const dataTransfer = new DataTransfer();
+  for (let i = 0; i < files.length; i++) {
+    dataTransfer.items.add(files[i]);
+  }
+  fileInput.files = dataTransfer.files;
+
   updateStatus(`${files.length} file(s) selected.`);
   populateConversionOptions(fileType, files[0].name.split('.').pop().toLowerCase());
+  resetCopyIconColor();
+  extractedText = '';
 }
 
 function getFileType(file) {
+  console.log('getFileType called with:', file);
   const extension = file.name.split('.').pop().toLowerCase();
   for (const [type, formats] of Object.entries(supportedFormats)) {
     if (formats[extension]) return type;
   }
+  // If the file doesn't have a recognized extension, check its MIME type
+  if (file.type.startsWith('image/')) return 'image';
+  if (file.type === 'application/pdf') return 'document';
   return null;
 }
-
 
 function populateConversionOptions(fileType, extension) {
   outputFormat.innerHTML = '<option value="">Select option</option>';
@@ -144,6 +195,60 @@ function handleConvertButtonClick() {
     .catch(error => {
       updateStatus(`Conversion failed: ${error.message}`);
     });
+}
+
+async function handleExtractButtonClick() {
+  const files = fileInput.files;
+
+  if (files.length === 0) {
+    updateStatus('Please select an image file first.');
+    return;
+  }
+
+  const file = files[0];
+  if (getFileType(file) !== 'image') {
+    updateStatus('Please select an image file for text extraction.');
+    return;
+  }
+
+  updateStatus('Extracting text from image...');
+  try {
+    extractedText = await extractTextFromImage(file);
+    updateStatus('Text extracted successfully. Click "Copy" to copy the text.');
+    copyIcon.classList.add('text-green-500');
+  } catch (error) {
+    updateStatus(`Error extracting text: ${error.message}`);
+    copyIcon.classList.remove('text-green-500');
+  }
+}
+
+async function extractTextFromImage(file) {
+  const { data: { text } } = await Tesseract.recognize(file, 'grc+eng', {
+    logger: m => {
+      if (m.status === 'recognizing text') {
+        updateStatus(`Recognizing text: ${Math.round(m.progress * 100)}%`);
+      }
+    }
+  });
+  return text;
+}
+
+function handleCopyButtonClick() {
+  if (extractedText) {
+    navigator.clipboard.writeText(extractedText)
+      .then(() => {
+        updateStatus('Text copied to clipboard!');
+        setTimeout(() => copyIcon.classList.remove('text-green-500'), 1000);
+      })
+      .catch(err => updateStatus(`Error copying text: ${err}`));
+  } else {
+    updateStatus('No extracted text to copy. Please extract text from an image first.');
+    copyIcon.classList.remove('text-green-500');
+  }
+}
+
+function resetCopyIconColor() {
+  copyIcon.classList.remove('text-green-500', 'text-blue-500');
 }
 
 async function convertFiles(files, targetFormat) {

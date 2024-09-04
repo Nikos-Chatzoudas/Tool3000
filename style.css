@@ -75,32 +75,13 @@ p {
   margin: 0;
 }
 
-#convertButton {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  gap: 1rem;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-
-  align-self: center;
-}
 
 .gear {
   transition: border-color 0.25s;
 }
 
 
-#convertButton:hover .gear {
-  animation: spin 3s infinite;
-}
+
 
 #outputFormat {
   display: flex;
@@ -184,11 +165,21 @@ input::-webkit-inner-spin-button {
   transition: transform 0.5s ease;
 }
 
-#resizeButton:hover .resizeicon {
+
+#preserveAspectRatio {
+  margin-right: 10px;
   transform: scale(1.2);
 }
 
-#resizeButton {
+#preserveAspectRatio+label {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.button {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -202,19 +193,19 @@ input::-webkit-inner-spin-button {
   font-family: inherit;
   background-color: #1a1a1a;
   cursor: pointer;
-
+  transition: transform 0.3s, color 0.3s;
   align-self: center;
+  min-height: 1.4rem;
 }
 
-#preserveAspectRatio {
-  margin-right: 10px;
-  transform: scale(1.2);
+.button:hover {
+  transform: scale(1.1);
 }
 
-#preserveAspectRatio+label {
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  user-select: none;
+.text-green-500 {
+  color: #10B981;
+}
+
+.text-blue-500 {
+  color: #3B82F6;
 }
