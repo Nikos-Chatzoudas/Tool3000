@@ -1,5 +1,5 @@
 import './style.css';
-
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 const fileInput = document.getElementById('fileInput');
 const convertButton = document.getElementById('convertButton');
 const resizeButton = document.getElementById('resizeButton');
@@ -24,6 +24,12 @@ const supportedFormats = {
     'otf': ['ttf', 'woff', 'woff2'],
     'woff': ['ttf', 'otf', 'woff2'],
     'woff2': ['ttf', 'otf', 'woff']
+  },
+  'document': {
+    'docx': ['pdf'],
+    'doc': ['pdf'],
+    'txt': ['pdf'],
+    'rtf': ['pdf']
   }
 };
 
@@ -105,6 +111,7 @@ function getFileType(file) {
   return null;
 }
 
+
 function populateConversionOptions(fileType, extension) {
   outputFormat.innerHTML = '<option value="">Select option</option>';
 
@@ -141,8 +148,54 @@ function handleConvertButtonClick() {
 
 async function convertFiles(files, targetFormat) {
   for (const file of files) {
-    await convertFile(file, targetFormat);
+    if (getFileType(file) === 'document' && targetFormat === 'pdf') {
+      await convertDocumentToPdf(file);
+    } else {
+      await convertFile(file, targetFormat);
+    }
   }
+}
+
+async function convertDocumentToPdf(file) {
+  const reader = new FileReader();
+  reader.onload = async (event) => {
+    const content = event.target.result;
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage();
+    const { width, height } = page.getSize();
+    const fontSize = 12;
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    const lines = content.split('\n');
+    let y = height - 50;
+
+    for (const line of lines) {
+      if (y < 50) {
+        page = pdfDoc.addPage();
+        y = height - 50;
+      }
+      page.drawText(line, {
+        x: 50,
+        y: y,
+        size: fontSize,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+      y -= fontSize + 5;
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const downloadUrl = URL.createObjectURL(blob);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = downloadUrl;
+    downloadLink.download = file.name.replace(/\.[^/.]+$/, '.pdf');
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(downloadUrl);
+  };
+  reader.readAsText(file);
 }
 
 async function convertFile(file, targetFormat) {
