@@ -50,26 +50,20 @@ function setupPasteListener() {
 }
 
 function handlePaste(e) {
-  console.log('Paste event triggered');
   e.preventDefault();
   e.stopPropagation();
 
   const items = e.clipboardData.items;
-  console.log('Clipboard items:', items);
 
   for (let i = 0; i < items.length; i++) {
-    console.log(`Item ${i} type:`, items[i].type);
     if (items[i].type.indexOf('image') !== -1) {
-      console.log('Image found in clipboard');
       const blob = items[i].getAsFile();
       const file = new File([blob], "pasted_image.png", { type: blob.type });
-      console.log('Created file:', file);
       handleFiles([file]);
       return;
     }
   }
 
-  console.log('No image found in clipboard');
   updateStatus('No image found in clipboard. Please copy an image and try again.');
 }
 
@@ -120,7 +114,6 @@ function handleDrop(e) {
 }
 
 function handleFiles(files) {
-  console.log('handleFiles called with:', files);
   if (files.length === 0) {
     updateStatus("No files selected.");
     return;
@@ -132,13 +125,11 @@ function handleFiles(files) {
   }
 
   const fileType = getFileType(files[0]);
-  console.log('File type:', fileType);
   if (!fileType) {
     updateStatus("Unsupported file type.");
     return;
   }
 
-  // Create a new FileList-like object
   const dataTransfer = new DataTransfer();
   for (let i = 0; i < files.length; i++) {
     dataTransfer.items.add(files[i]);
@@ -152,12 +143,10 @@ function handleFiles(files) {
 }
 
 function getFileType(file) {
-  console.log('getFileType called with:', file);
   const extension = file.name.split('.').pop().toLowerCase();
   for (const [type, formats] of Object.entries(supportedFormats)) {
     if (formats[extension]) return type;
   }
-  // If the file doesn't have a recognized extension, check its MIME type
   if (file.type.startsWith('image/')) return 'image';
   if (file.type === 'application/pdf') return 'document';
   return null;
