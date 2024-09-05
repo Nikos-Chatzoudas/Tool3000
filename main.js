@@ -17,12 +17,12 @@ const preserveAspectRatio = document.getElementById('preserveAspectRatio');
 
 const supportedFormats = {
   'image': {
-    'jpg': ['png', 'webp', 'gif', 'jiji'],
-    'jpeg': ['png', 'webp', 'gif', 'jiji'],
-    'png': ['jpg', 'webp', 'gif', 'jiji'],
-    'gif': ['jpg', 'png', 'webp', 'jiji'],
-    'webp': ['jpg', 'png', 'gif', 'jiji'],
-    'jiji': ['jpg', 'png', 'gif', 'webp']
+    'jpg': ['png', 'webp', 'gif', 'jiji', 'ico'],
+    'jpeg': ['png', 'webp', 'gif', 'jiji', 'ico'],
+    'png': ['jpg', 'webp', 'gif', 'jiji', 'ico'],
+    'gif': ['jpg', 'png', 'webp', 'jiji', 'ico'],
+    'webp': ['jpg', 'png', 'gif', 'jiji', 'ico'],
+    'jiji': ['jpg', 'png', 'gif', 'webp', 'ico']
   },
   'font': {
     'ttf': ['woff', 'woff2', 'otf'],
@@ -38,6 +38,96 @@ const supportedFormats = {
   }
 };
 
+async function convertToIco(file) {
+  const img = await createImageBitmap(file);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  const sizes = [16, 32, 48, 64, 128, 256];
+  const imageDataArray = [];
+
+  for (const size of sizes) {
+    canvas.width = size;
+    canvas.height = size;
+    ctx.drawImage(img, 0, 0, size, size);
+    const imageData = ctx.getImageData(0, 0, size, size);
+    imageDataArray.push(imageData);
+  }
+
+  const icoData = createIcoFile(imageDataArray);
+  const blob = new Blob([icoData], { type: 'image/x-icon' });
+
+  const downloadUrl = URL.createObjectURL(blob);
+  const downloadLink = document.createElement('a');
+  downloadLink.href = downloadUrl;
+  downloadLink.download = file.name.replace(/\.[^/.]+$/, '.ico');
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+  URL.revokeObjectURL(downloadUrl);
+}
+function createIcoFile(imageDataArray) {
+  const headerSize = 6 + imageDataArray.length * 16;
+  let dataSize = 0;
+  imageDataArray.forEach(imageData => {
+    dataSize += 40 + imageData.data.length;
+  });
+
+  const buffer = new ArrayBuffer(headerSize + dataSize);
+  const view = new DataView(buffer);
+
+  // ICO header
+  view.setUint16(0, 0, true); // Reserved
+  view.setUint16(2, 1, true); // ICO type
+  view.setUint16(4, imageDataArray.length, true); // Number of images
+
+  let offset = headerSize;
+  imageDataArray.forEach((imageData, index) => {
+    const size = imageData.width;
+    const bpp = 32;
+
+    // Image entry in ICO header
+    view.setUint8(6 + index * 16, size === 256 ? 0 : size); // Width
+    view.setUint8(7 + index * 16, size === 256 ? 0 : size); // Height
+    view.setUint8(8 + index * 16, 0); // Color palette
+    view.setUint8(9 + index * 16, 0); // Reserved
+    view.setUint16(10 + index * 16, 1, true); // Color planes
+    view.setUint16(12 + index * 16, bpp, true); // Bits per pixel
+    view.setUint32(14 + index * 16, 40 + imageData.data.length, true); // Size of image data
+    view.setUint32(18 + index * 16, offset, true); // Offset of image data
+
+    // Image data
+    view.setUint32(offset, 40, true); // BITMAPINFOHEADER size
+    view.setInt32(offset + 4, size, true); // Width
+    view.setInt32(offset + 8, size * 2, true); // Height (2x because ICO format uses height of XOR-bitmap + AND-bitmap)
+    view.setUint16(offset + 12, 1, true); // Planes
+    view.setUint16(offset + 14, bpp, true); // Bits per pixel
+    view.setUint32(offset + 16, 0, true); // Compression (no compression)
+    view.setUint32(offset + 20, imageData.data.length, true); // Image size
+    view.setUint32(offset + 24, 0, true); // X pixels per meter
+    view.setUint32(offset + 28, 0, true); // Y pixels per meter
+    view.setUint32(offset + 32, 0, true); // Colors in color table
+    view.setUint32(offset + 36, 0, true); // Important color count
+
+    offset += 40;
+
+    // Pixel data (flipped vertically)
+    for (let y = size - 1; y >= 0; y--) {
+      for (let x = 0; x < size; x++) {
+        const srcIndex = (y * size + x) * 4;
+        const destIndex = offset + ((size - 1 - y) * size + x) * 4;
+        view.setUint8(destIndex, imageData.data[srcIndex + 2]); // Blue
+        view.setUint8(destIndex + 1, imageData.data[srcIndex + 1]); // Green
+        view.setUint8(destIndex + 2, imageData.data[srcIndex]); // Red
+        view.setUint8(destIndex + 3, imageData.data[srcIndex + 3]); // Alpha
+      }
+    }
+
+    offset += imageData.data.length;
+  });
+
+  return buffer;
+}
 let extractedText = '';
 
 function init() {
@@ -244,6 +334,8 @@ async function convertFiles(files, targetFormat) {
   for (const file of files) {
     if (getFileType(file) === 'document' && targetFormat === 'pdf') {
       await convertDocumentToPdf(file);
+    } else if (targetFormat === 'ico') {
+      await convertToIco(file);
     } else {
       await convertFile(file, targetFormat);
     }

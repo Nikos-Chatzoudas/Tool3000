@@ -7,7 +7,6 @@ body {
   color: rgba(255, 255, 255, 0.87);
   background-color: #121212;
 
-  background-image: radial-gradient(at bottom, #715cab, #121212);
 }
 
 body::before,
@@ -43,13 +42,13 @@ body::before {
   align-self: center;
   width: 60vw;
   height: 30vh;
-  border: 2px solid rgba(245, 245, 245, 0.452);
+  border: 2px solid rgba(245, 245, 245, 0.01);
   background-color: rgba(56, 56, 56, 0.2);
   padding: 0px;
   cursor: pointer;
   margin-bottom: 20px;
   border-radius: 25px;
-  backdrop-filter: blur(10px);
+
 
 }
 
@@ -96,7 +95,7 @@ p {
   font-weight: 500;
   font-family: inherit;
   background-color: white;
-  color: 1a1a1a;
+  color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
   align-self: center;
@@ -115,10 +114,9 @@ p {
 .menu {
   display: flex;
   flex-direction: row;
-  backdrop-filter: blur(10px);
-  background-color: #292929;
-  border: 2px solid rgba(245, 245, 245, 0.452);
-  backdrop-filter: blur(10px);
+
+  border: 2px solid rgba(245, 245, 245, 0.01);
+  background-color: rgba(56, 56, 56, 0.2);
   padding: 0.5rem;
   border-radius: 25px;
   align-items: center;
@@ -191,7 +189,7 @@ input::-webkit-inner-spin-button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #0c0c0c;
   cursor: pointer;
   transition: transform 0.3s, color 0.3s;
   align-self: center;
