@@ -207,3 +207,24 @@ input::-webkit-inner-spin-button {
 .text-blue-500 {
   color: #3B82F6;
 }
+
+.supportme {
+  position: fixed;
+  top: 3rem;
+  right: 0;
+  padding: 1rem;
+  border: 2px solid rgba(245, 245, 245, 0.01);
+  background-color: rgba(56, 56, 56, 0.2);
+  border-radius: 25px 0 0px 25px;
+  transition: transform 0.3s;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: center;
+  color: white;
+  text-decoration: none;
+}
+
+.supportme:hover {
+  transform: scale(1.1);
+}

@@ -23,12 +23,17 @@
     </filter>
   </svg>
 
+  <a target="_blank" class="supportme" href="https://ko-fi.com/chatzoudas">
+    <i class="fa-solid fa-mug-hot"></i>
+    Support me
 
+  </a>
   <div class="container">
     <h1 class="title">~ Tool 3000 ~</h1>
     <div id="dropArea" class="drop-area">
       <p>Drag & drop or click to select a file/files of the same type</p>
     </div>
+    <p id="status">😪</p>
     <input type="file" id="fileInput" multiple style="display: none;">
 
     <div style="display: flex; flex-direction: row; gap: 1rem;">
@@ -72,7 +77,9 @@
         </div>
       </div>
     </div>
-    <p id="status"></p>
+
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/util@0.11.0/dist/index.min.js"></script>
     <script src="https://kit.fontawesome.com/f1d4922354.js" crossorigin="anonymous"></script>
     <script type="module" src="/main.js"></script>
 </body>
