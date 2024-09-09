@@ -46,25 +46,33 @@ const { createFFmpeg, fetchFile } = FFmpeg;
 const ffmpeg = createFFmpeg({ log: true });
 
 async function convertAudioFile(file, targetFormat) {
-  if (!ffmpeg.isLoaded()) {
-    await ffmpeg.load();
+  try {
+    if (!ffmpeg.isLoaded()) {
+      await ffmpeg.load();
+    }
+
+    console.log('Writing file to ffmpeg FS:', file.name);
+    ffmpeg.FS('writeFile', file.name, await fetchFile(file));
+
+    console.log('Running ffmpeg command');
+    await ffmpeg.run('-i', file.name, `output.${targetFormat}`);
+
+    console.log('Reading output file from ffmpeg FS');
+    const data = ffmpeg.FS('readFile', `output.${targetFormat}`);
+    const blob = new Blob([data.buffer], { type: `audio/${targetFormat}` });
+
+    const downloadUrl = URL.createObjectURL(blob);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = downloadUrl;
+    downloadLink.download = file.name.replace(/\.[^/.]+$/, `.${targetFormat}`);
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(downloadUrl);
+  } catch (error) {
+    console.error('Error during audio conversion:', error);
+    updateStatus(`Conversion failed: ${error.message}`);
   }
-
-  ffmpeg.FS('writeFile', file.name, await fetchFile(file));
-
-  await ffmpeg.run('-i', file.name, `output.${targetFormat}`);
-
-  const data = ffmpeg.FS('readFile', `output.${targetFormat}`);
-  const blob = new Blob([data.buffer], { type: `audio/${targetFormat}` });
-
-  const downloadUrl = URL.createObjectURL(blob);
-  const downloadLink = document.createElement('a');
-  downloadLink.href = downloadUrl;
-  downloadLink.download = file.name.replace(/\.[^/.]+$/, `.${targetFormat}`);
-  document.body.appendChild(downloadLink);
-  downloadLink.click();
-  document.body.removeChild(downloadLink);
-  URL.revokeObjectURL(downloadUrl);
 }
 async function convertToIco(file) {
   const img = await createImageBitmap(file);
