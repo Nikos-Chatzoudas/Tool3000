@@ -14,7 +14,6 @@ const outputFormat = document.getElementById('outputFormat');
 const widthInput = document.getElementById('widthInput');
 const heightInput = document.getElementById('heightInput');
 const preserveAspectRatio = document.getElementById('preserveAspectRatio');
-
 const supportedFormats = {
   'image': {
     'jpg': ['png', 'webp', 'gif', 'jiji', 'ico'],
@@ -35,9 +34,38 @@ const supportedFormats = {
     'doc': ['pdf'],
     'txt': ['pdf'],
     'rtf': ['pdf']
+  },
+  'audio': {
+    'mp3': ['wav', 'ogg'],
+    'wav': ['mp3', 'ogg'],
+    'ogg': ['mp3', 'wav']
   }
 };
+const { createFFmpeg, fetchFile } = FFmpeg;
 
+const ffmpeg = createFFmpeg({ log: true });
+
+async function convertAudioFile(file, targetFormat) {
+  if (!ffmpeg.isLoaded()) {
+    await ffmpeg.load();
+  }
+
+  ffmpeg.FS('writeFile', file.name, await fetchFile(file));
+
+  await ffmpeg.run('-i', file.name, `output.${targetFormat}`);
+
+  const data = ffmpeg.FS('readFile', `output.${targetFormat}`);
+  const blob = new Blob([data.buffer], { type: `audio/${targetFormat}` });
+
+  const downloadUrl = URL.createObjectURL(blob);
+  const downloadLink = document.createElement('a');
+  downloadLink.href = downloadUrl;
+  downloadLink.download = file.name.replace(/\.[^/.]+$/, `.${targetFormat}`);
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+  URL.revokeObjectURL(downloadUrl);
+}
 async function convertToIco(file) {
   const img = await createImageBitmap(file);
   const canvas = document.createElement('canvas');
@@ -332,10 +360,13 @@ function resetCopyIconColor() {
 
 async function convertFiles(files, targetFormat) {
   for (const file of files) {
-    if (getFileType(file) === 'document' && targetFormat === 'pdf') {
+    const fileType = getFileType(file);
+    if (fileType === 'document' && targetFormat === 'pdf') {
       await convertDocumentToPdf(file);
     } else if (targetFormat === 'ico') {
       await convertToIco(file);
+    } else if (fileType === 'audio') {
+      await convertAudioFile(file, targetFormat);
     } else {
       await convertFile(file, targetFormat);
     }
