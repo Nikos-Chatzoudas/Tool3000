@@ -248,3 +248,25 @@ a {
   font-size: 0.8rem;
   list-style: 0.7rem;
 }
+
+.menulist {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: center;
+}
+
+@media only screen and (max-width: 600px) {
+  .menulist {
+    flex-direction: column;
+    width: 90vw
+  }
+
+  .menulist div {
+    width: 100%;
+  }
+
+  .drop-area {
+    width: 90vw;
+  }
+}
