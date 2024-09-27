@@ -494,7 +494,7 @@ async function resizeFile(file, width, height, canvas, ctx) {
         const downloadUrl = URL.createObjectURL(blob);
         const downloadLink = document.createElement('a');
         downloadLink.href = downloadUrl;
-        downloadLink.download = `resized_${file.name}`;
+        downloadLink.download = `${file.name}`;
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
