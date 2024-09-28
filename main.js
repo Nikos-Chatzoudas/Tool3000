@@ -245,7 +245,7 @@ function handleFiles(files) {
     return;
   }
 
-  if (files.length > 50) {
+  if (files.length > 100) {
     updateStatus("Maximum of 50 files can be selected.");
     return;
   }
