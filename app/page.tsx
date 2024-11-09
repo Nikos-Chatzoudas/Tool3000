@@ -1,34 +1,74 @@
 "use client";
-import React from "react";
-import { FileUp, Cog, Maximize2, Copy, Coffee } from "lucide-react";
+import React, { ChangeEvent, DragEvent, useRef, useState } from "react";
+import { FileUp, Cog, Maximize2, Coffee } from "lucide-react";
 
-const tool3000 = () => {
-  const fileInputRef = React.useRef(null);
-  const [status, setStatus] = React.useState(
-    "Drop files here or click to upload"
-  );
-  const [outputFormat, setOutputFormat] = React.useState("");
-  const [dimensions, setDimensions] = React.useState({ width: "", height: "" });
-  const [preserveAspect, setPreserveAspect] = React.useState(true);
-  const [extractedText, setExtractedText] = React.useState("");
+const Tool3000: React.FC = () => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [status, setStatus] = useState("Drop files here or click to upload");
+  const [outputFormat, setOutputFormat] = useState<string>("");
+  const [dimensions, setDimensions] = useState<{
+    width: string;
+    height: string;
+  }>({ width: "", height: "" });
+  const [preserveAspect, setPreserveAspect] = useState<boolean>(true);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const conversionOptions = ["jpg", "png", "webp", "gif"];
 
-  const handleDimensionChange = (dimension) => (e) => {
-    setDimensions((prev) => ({ ...prev, [dimension]: e.target.value }));
-  };
+  const handleDimensionChange =
+    (dimension: "width" | "height") => (e: ChangeEvent<HTMLInputElement>) => {
+      setDimensions((prev) => ({ ...prev, [dimension]: e.target.value }));
+    };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    handleFiles(files);
   };
 
-  const handleFiles = (files) => {};
+  const handleFiles = (files: File[]) => {
+    setUploadedFiles(files);
+    setStatus(`${files.length} file(s) ready for conversion`);
+  };
 
-  const handleConvert = () => {};
+  const handleConvert = async () => {
+    if (!outputFormat || uploadedFiles.length === 0) {
+      setStatus("Please select a format and upload files first");
+      return;
+    }
 
-  const handleResize = () => {};
+    for (const file of uploadedFiles) {
+      const reader = new FileReader();
 
-  const handleExtractText = () => {};
+      reader.onload = (e) => {
+        if (!e.target?.result) return;
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          if (!ctx) return;
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+
+          const convertedURL = canvas.toDataURL(`image/${outputFormat}`);
+          downloadFile(convertedURL, file.name);
+        };
+        img.src = e.target.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    setStatus("Conversion complete!");
+  };
+
+  const downloadFile = (url: string, filename: string) => {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename.replace(/\.[^/.]+$/, `.${outputFormat}`);
+    a.click();
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
@@ -55,14 +95,15 @@ const tool3000 = () => {
             type="file"
             multiple
             className="hidden"
-            onChange={(e) => handleFiles(e.target.files)}
+            onChange={(e) => handleFiles(Array.from(e.target.files || []))}
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          {/* File Converter Section */}
           <div className="bg-zinc-900 p-4 sm:p-6 rounded-lg shadow-md border border-zinc-800 h-full">
             <h3 className="text-lg font-semibold mb-3 sm:mb-4 text-zinc-50">
-              Converter
+              File Converter
             </h3>
             <div className="space-y-3 sm:space-y-4">
               <select
@@ -89,7 +130,7 @@ const tool3000 = () => {
             </div>
           </div>
 
-          {/* resizer Section */}
+          {/* Image Resizer Section */}
           <div className="bg-zinc-900 p-4 sm:p-6 rounded-lg shadow-md border border-zinc-800 h-full">
             <h3 className="text-lg font-semibold mb-3 sm:mb-4 text-zinc-50">
               Image Resizer
@@ -121,7 +162,7 @@ const tool3000 = () => {
                 <span>Preserve Aspect Ratio</span>
               </label>
               <button
-                onClick={handleResize}
+                onClick={() => {} /* handle resize here later */}
                 className="w-full bg-zinc-800 text-zinc-50 p-2 sm:p-3 rounded flex items-center 
                   justify-center gap-2 hover:bg-zinc-700 transition-colors text-sm sm:text-base"
               >
@@ -150,4 +191,4 @@ const tool3000 = () => {
   );
 };
 
-export default tool3000;
+export default Tool3000;
