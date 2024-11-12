@@ -11,6 +11,9 @@ const Tool3000: React.FC = () => {
     height: string;
   }>({ width: "", height: "" });
   const [preserveAspect, setPreserveAspect] = useState<boolean>(true);
+  const [disableField, setDisableField] = useState<"width" | "height" | null>(
+    null
+  );
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const conversionOptions = ["jpg", "png", "webp", "gif"];
@@ -18,6 +21,12 @@ const Tool3000: React.FC = () => {
   const handleDimensionChange =
     (dimension: "width" | "height") => (e: ChangeEvent<HTMLInputElement>) => {
       setDimensions((prev) => ({ ...prev, [dimension]: e.target.value }));
+
+      if (preserveAspect) {
+        setDisableField(dimension === "width" ? "height" : "width");
+      } else {
+        setDisableField(null);
+      }
     };
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
@@ -63,10 +72,54 @@ const Tool3000: React.FC = () => {
     setStatus("Conversion complete!");
   };
 
+  const handleResize = async () => {
+    if (uploadedFiles.length === 0) {
+      setStatus("Please upload files first");
+      return;
+    }
+
+    for (const file of uploadedFiles) {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        if (!e.target?.result) return;
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          if (!ctx) return;
+
+          let { width, height } = dimensions;
+
+          if (preserveAspect) {
+            const aspectRatio = img.width / img.height;
+            if (width && !height) {
+              height = String(Math.round(parseInt(width) / aspectRatio));
+            } else if (!width && height) {
+              width = String(Math.round(parseInt(height) * aspectRatio));
+            }
+          }
+
+          canvas.width = parseInt(width) || img.width;
+          canvas.height = parseInt(height) || img.height;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          const resizedURL = canvas.toDataURL(`image/${outputFormat || "png"}`);
+          downloadFile(resizedURL, file.name);
+        };
+        img.src = e.target.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    setStatus("Resize complete!");
+  };
+
   const downloadFile = (url: string, filename: string) => {
     const a = document.createElement("a");
     a.href = url;
-    a.download = filename.replace(/\.[^/.]+$/, `.${outputFormat}`);
+    a.download = filename.replace(/\.[^/.]+$/, `.${outputFormat || "png"}`);
     a.click();
   };
 
@@ -141,28 +194,44 @@ const Tool3000: React.FC = () => {
                 placeholder="Width"
                 value={dimensions.width}
                 onChange={handleDimensionChange("width")}
-                className="w-full p-2 sm:p-3 rounded bg-zinc-800 text-zinc-50 border border-zinc-700 
-                  focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 text-sm sm:text-base"
+                disabled={preserveAspect && disableField === "width"}
+                className={`w-full p-2 sm:p-3 rounded text-zinc-50 border border-zinc-700 
+                  focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 text-sm sm:text-base 
+                  bg-zinc-800 ${
+                    preserveAspect && disableField === "width"
+                      ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                      : "bg-zinc-800"
+                  }`}
               />
               <input
                 type="number"
                 placeholder="Height"
                 value={dimensions.height}
                 onChange={handleDimensionChange("height")}
-                className="w-full p-2 sm:p-3 rounded bg-zinc-800 text-zinc-50 border border-zinc-700 
-                  focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 text-sm sm:text-base"
+                disabled={preserveAspect && disableField === "height"}
+                className={`w-full p-2 sm:p-3 rounded text-zinc-50 border border-zinc-700 
+                  focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 text-sm sm:text-base 
+                  bg-zinc-800 ${
+                    preserveAspect && disableField === "height"
+                      ? "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                      : "bg-zinc-800"
+                  }`}
               />
+
               <label className="flex items-center gap-2 text-zinc-300 text-sm sm:text-base">
                 <input
                   type="checkbox"
                   checked={preserveAspect}
-                  onChange={(e) => setPreserveAspect(e.target.checked)}
+                  onChange={(e) => {
+                    setPreserveAspect(e.target.checked);
+                    if (!e.target.checked) setDisableField(null);
+                  }}
                   className="rounded bg-zinc-800 border-zinc-700 text-zinc-500 focus:ring-zinc-500"
                 />
                 <span>Preserve Aspect Ratio</span>
               </label>
               <button
-                onClick={() => {} /* handle resize here later */}
+                onClick={handleResize}
                 className="w-full bg-zinc-800 text-zinc-50 p-2 sm:p-3 rounded flex items-center 
                   justify-center gap-2 hover:bg-zinc-700 transition-colors text-sm sm:text-base"
               >
