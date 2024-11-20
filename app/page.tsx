@@ -1,6 +1,7 @@
 "use client";
 import React, { ChangeEvent, DragEvent, useRef, useState } from "react";
 import { FileUp, Cog, Maximize2, Coffee } from "lucide-react";
+import heic2any from "heic2any";
 
 const Tool3000: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -35,9 +36,50 @@ const Tool3000: React.FC = () => {
     handleFiles(files);
   };
 
-  const handleFiles = (files: File[]) => {
-    setUploadedFiles(files);
-    setStatus(`${files.length} file(s) ready for conversion`);
+  const processHeicFile = async (file: File): Promise<Blob> => {
+    try {
+      const convertedBlob = await heic2any({
+        blob: file,
+        toType: "image/jpeg",
+        quality: 0.92,
+      });
+
+      return Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+    } catch (error) {
+      console.error("Error converting HEIC file:", error);
+      throw new Error("Failed to convert HEIC file");
+    }
+  };
+
+  const handleFiles = async (files: File[]) => {
+    const processedFiles: File[] = [];
+    setStatus("Processing files...");
+
+    for (const file of files) {
+      try {
+        if (
+          file.type === "image/heic" ||
+          file.name.toLowerCase().endsWith(".heic")
+        ) {
+          const convertedBlob = await processHeicFile(file);
+          const convertedFile = new File(
+            [convertedBlob],
+            file.name.replace(/\.heic$/i, ".jpg"),
+            { type: "image/jpeg" }
+          );
+          processedFiles.push(convertedFile);
+        } else {
+          processedFiles.push(file);
+        }
+      } catch (error) {
+        console.error(`Error processing file ${file.name}:`, error);
+        setStatus(`Error processing ${file.name}. Please try again.`);
+        return;
+      }
+    }
+
+    setUploadedFiles(processedFiles);
+    setStatus(`${processedFiles.length} file(s) ready for conversion`);
   };
 
   const handleConvert = async () => {
@@ -45,6 +87,8 @@ const Tool3000: React.FC = () => {
       setStatus("Please select a format and upload files first");
       return;
     }
+
+    setStatus("Converting files...");
 
     for (const file of uploadedFiles) {
       const reader = new FileReader();
@@ -77,6 +121,8 @@ const Tool3000: React.FC = () => {
       setStatus("Please upload files first");
       return;
     }
+
+    setStatus("Resizing files...");
 
     for (const file of uploadedFiles) {
       const reader = new FileReader();
@@ -131,6 +177,9 @@ const Tool3000: React.FC = () => {
           <h1 className="text-3xl sm:text-4xl font-bold text-zinc-50 tracking-tight">
             Tool 3000
           </h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            Supports JPG, PNG, WEBP, GIF, and HEIC files
+          </p>
         </header>
 
         {/* drop zone */}
@@ -147,6 +196,7 @@ const Tool3000: React.FC = () => {
             ref={fileInputRef}
             type="file"
             multiple
+            accept="image/*,.heic"
             className="hidden"
             onChange={(e) => handleFiles(Array.from(e.target.files || []))}
           />
